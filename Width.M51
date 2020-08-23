@@ -1,0 +1,232 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    08/23/2020  21:24:48  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE Main.obj TO Width
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  Main.obj (MAIN)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_STARTUP)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (PRINTF)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_INIT)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?CLDPTR)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?CLDOPTR)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?CSTPTR)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?PLDIIDATA)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?CCASE)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (PUTCHAR)
+
+
+LINK MAP OF MODULE:  Width (MAIN)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0018H     UNIT         _DATA_GROUP_
+            BIT     0020H.0   0001H.1   UNIT         _BIT_GROUP_
+                    0021H.1   0000H.7                *** GAP ***
+            DATA    0022H     003BH     UNIT         ?DT?MAIN
+            IDATA   005DH     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+                    0003H     0020H                  *** GAP ***
+            CODE    0023H     0003H     ABSOLUTE     
+                    0026H     07DAH                  *** GAP ***
+            CODE    0800H     035CH     UNIT         ?PR?PRINTF?PRINTF
+            CODE    0B5CH     00ACH     UNIT         ?PR?SERIAL_ISR?MAIN
+            CODE    0C08H     008EH     UNIT         ?C?LIB_CODE
+            CODE    0C96H     008CH     UNIT         ?C_C51STARTUP
+            CODE    0D22H     0032H     UNIT         ?PR?MAIN?MAIN
+            CODE    0D54H     002AH     UNIT         ?C_INITSEG
+            CODE    0D7EH     0027H     UNIT         ?PR?PUTCHAR?PUTCHAR
+            CODE    0DA5H     000FH     UNIT         ?PR?FREQUENCY?MAIN
+            CODE    0DB4H     000FH     UNIT         ?PR?AMPLITUDE?MAIN
+            CODE    0DC3H     000AH     UNIT         ?CO?MAIN
+
+
+
+OVERLAY MAP OF MODULE:   Width (MAIN)
+
+
+SEGMENT                           BIT_GROUP          DATA_GROUP 
+  +--> CALLED SEGMENT          START    LENGTH     START    LENGTH
+------------------------------------------------------------------
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/23/2020  21:24:48  PAGE 2
+
+
+?C_C51STARTUP                  -----    -----      -----    -----
+  +--> ?PR?MAIN?MAIN
+  +--> ?C_INITSEG
+
+?PR?MAIN?MAIN                  -----    -----      0008H    0004H
+  +--> ?PR?FREQUENCY?MAIN
+  +--> ?PR?AMPLITUDE?MAIN
+
+?PR?FREQUENCY?MAIN             -----    -----      -----    -----
+  +--> ?CO?MAIN
+  +--> ?PR?PRINTF?PRINTF
+
+?PR?PRINTF?PRINTF              0020H.0  0001H.1    000CH    0014H
+  +--> ?PR?PUTCHAR?PUTCHAR
+
+?PR?AMPLITUDE?MAIN             -----    -----      -----    -----
+  +--> ?CO?MAIN
+  +--> ?PR?PRINTF?PRINTF
+
+
+
+SYMBOL TABLE OF MODULE:  Width (MAIN)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        MAIN
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0023H         PUBLIC        check
+  B:00A8H.7       PUBLIC        EA
+  B:00A8H.4       PUBLIC        ES
+  D:0025H         PUBLIC        index
+  B:0098H.0       PUBLIC        RI
+  D:0027H         PUBLIC        flag
+  B:0098H.1       PUBLIC        TI
+  D:0029H         PUBLIC        lookup
+  C:0D22H         PUBLIC        main
+  D:0099H         PUBLIC        SBUF
+  C:0B5CH         PUBLIC        serial_isr
+  D:0098H         PUBLIC        SCON
+  D:0089H         PUBLIC        TMOD
+  D:0088H         PUBLIC        TCON
+  D:003DH         PUBLIC        arr
+  C:0DB4H         PUBLIC        amplitude
+  D:0051H         PUBLIC        res
+  D:008DH         PUBLIC        TH1
+  B:0088H.6       PUBLIC        TR1
+  C:0DA5H         PUBLIC        frequency
+  D:005BH         PUBLIC        i
+  -------         PROC          SERIAL_ISR
+  -------         DO            
+  D:0022H         SYMBOL        ch
+  -------         ENDDO         
+  C:0B5CH         LINE#         13
+  C:0B69H         LINE#         15
+  C:0B6FH         LINE#         16
+  C:0B6FH         LINE#         17
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/23/2020  21:24:48  PAGE 3
+
+
+  C:0B75H         LINE#         18
+  C:0B78H         LINE#         19
+  C:0B84H         LINE#         20
+  C:0BA1H         LINE#         21
+  C:0BB5H         LINE#         22
+  C:0BBDH         LINE#         23
+  C:0BBDH         LINE#         25
+  C:0BC4H         LINE#         26
+  C:0BC7H         LINE#         27
+  C:0BCDH         LINE#         28
+  C:0BCDH         LINE#         29
+  C:0BCDH         LINE#         30
+  C:0BD4H         LINE#         31
+  C:0BD7H         LINE#         32
+  C:0BDDH         LINE#         33
+  C:0BE3H         LINE#         34
+  C:0BE9H         LINE#         35
+  C:0BE9H         LINE#         37
+  C:0BEBH         LINE#         38
+  C:0BEDH         LINE#         40
+  C:0BF2H         LINE#         41
+  C:0BF4H         LINE#         42
+  C:0BF8H         LINE#         43
+  C:0BFAH         LINE#         44
+  C:0BFDH         LINE#         45
+  C:0BFDH         LINE#         46
+  C:0BFDH         LINE#         47
+  -------         ENDPROC       SERIAL_ISR
+  -------         PROC          FREQUENCY
+  C:0DA5H         LINE#         50
+  C:0DA5H         LINE#         51
+  C:0DAEH         LINE#         52
+  C:0DB3H         LINE#         53
+  -------         ENDPROC       FREQUENCY
+  -------         PROC          AMPLITUDE
+  C:0DB4H         LINE#         55
+  C:0DB4H         LINE#         56
+  C:0DBDH         LINE#         57
+  C:0DC2H         LINE#         58
+  -------         ENDPROC       AMPLITUDE
+  -------         PROC          MAIN
+  -------         DO            
+  D:0008H         SYMBOL        counter
+  D:000AH         SYMBOL        j
+  -------         ENDDO         
+  C:0D22H         LINE#         61
+  C:0D22H         LINE#         62
+  C:0D28H         LINE#         66
+  C:0D2BH         LINE#         67
+  C:0D2EH         LINE#         68
+  C:0D31H         LINE#         69
+  C:0D34H         LINE#         71
+  C:0D36H         LINE#         72
+  C:0D38H         LINE#         73
+  C:0D3AH         LINE#         75
+  C:0D3AH         LINE#         76
+  C:0D42H         LINE#         77
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/23/2020  21:24:48  PAGE 4
+
+
+  C:0D45H         LINE#         78
+  C:0D4FH         LINE#         79
+  C:0D52H         LINE#         80
+  C:0D52H         LINE#         81
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        MAIN
+
+  -------         MODULE        PRINTF
+  D:000CH         PUBLIC        ?_PRINTF517?BYTE
+  D:000CH         PUBLIC        ?_PRINTF?BYTE
+  D:000CH         PUBLIC        ?_SPRINTF517?BYTE
+  D:000CH         PUBLIC        ?_SPRINTF?BYTE
+  C:0862H         PUBLIC        _PRINTF
+  C:0862H         PUBLIC        _PRINTF517
+  C:085CH         PUBLIC        _SPRINTF
+  C:085CH         PUBLIC        _SPRINTF517
+  -------         ENDMOD        PRINTF
+
+  -------         MODULE        ?C?CLDPTR
+  C:0C08H         PUBLIC        ?C?CLDPTR
+  -------         ENDMOD        ?C?CLDPTR
+
+  -------         MODULE        ?C?CLDOPTR
+  C:0C21H         PUBLIC        ?C?CLDOPTR
+  -------         ENDMOD        ?C?CLDOPTR
+
+  -------         MODULE        ?C?CSTPTR
+  C:0C4EH         PUBLIC        ?C?CSTPTR
+  -------         ENDMOD        ?C?CSTPTR
+
+  -------         MODULE        ?C?PLDIIDATA
+  C:0C60H         PUBLIC        ?C?PLDIIDATA
+  -------         ENDMOD        ?C?PLDIIDATA
+
+  -------         MODULE        ?C?CCASE
+  C:0C70H         PUBLIC        ?C?CCASE
+  -------         ENDMOD        ?C?CCASE
+
+  -------         MODULE        PUTCHAR
+  C:0D7EH         PUBLIC        _PUTCHAR
+  -------         ENDMOD        PUTCHAR
+
+******************************************************************************
+* RESTRICTED VERSION WITH 0800H BYTE CODE SIZE LIMIT; USED: 0132H BYTE (14%) *
+******************************************************************************
+
+Program Size: data=93.1 xdata=0 code=1491
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -6,7 +6,6 @@ int arr[5];
 int index=0;
 int freq[5];
 int ampl[5];
-int res[5]; //binary versions
 int lookup[10] = {31, 15, 7, 3, 1, 0, 16, 24, 28, 30};
 int i=0;
 int check=1;
@@ -48,7 +47,6 @@ void serial_isr() interrupt 4{
 	}
 }
 
-//take the number in lookup, convert it to 5 bit binary
 void frequency(){
 	printf("freq");
 	for(i=0; i<sizeof(arr); i++){
@@ -67,9 +65,6 @@ void amplitude(){
 
 
 void main (void)  {
-	int counter=4;
-	
-	int j;
 	
 	SCON = 0x52;    /* SCON */                   /* setup serial port control */
 	TMOD = 0x20;    /* TMOD */                   /* hardware (2400 BAUD @12MHZ) */

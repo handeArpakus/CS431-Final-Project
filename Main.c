@@ -2,10 +2,10 @@
 #include <stdio.h>  
 
 int flag = 0;
-int arr[5];
+int arr[3];
 int index=0;
-int freq[5];
-int ampl[5];
+int frequency=-1;
+int amplitude=-1;
 int lookup[10] = {31, 15, 7, 3, 1, 0, 16, 24, 28, 30};
 int i=0;
 int check=1;
@@ -14,7 +14,8 @@ sbit clear = P2^4;
 sbit ret = P2^5;				  
 sbit left = P2^6;
 sbit right = P2^7;
-
+sbit A1 = P3^3;
+sbit A0 = P3^4;
 bit getBit(char c, char bitNumber) {
 	return (c >> bitNumber) & 1;
 }
@@ -100,6 +101,14 @@ void displayOnOffControl(bit display, bit cursor, bit blinking) {
 	delay();
 }
 
+static unsigned long overflow_count = 0;
+
+void timer0_ISR (void) interrupt 1
+{
+	overflow_count++;   /* Increment the overflow count */
+	flag=3; //for update the amplitude
+}
+
 void serial_isr() interrupt 4{	
 	static char ch = '\0';	
 	if(RI == 1)
@@ -136,25 +145,56 @@ void serial_isr() interrupt 4{
 	}
 }
 
-void frequency(){
-		functionSet();
-	entryModeSet(1, 0); // increment and no shift
-	displayOnOffControl(1, 1, 1);
-	sendString("freq");
-	for(i=0; i<sizeof(arr); i++){
-		freq[i] = arr[i];
-	}
-	P1=1;
 
+int i;
+
+
+
+void take_frequency(){
+	int freq =0;
+
+	printf("\n i: %d", sizeof(arr));
+	
+	for(i=0; i<3; i++){
+			freq = freq*10 + arr[i];
+		printf("\ni %d: %d\n", i, arr[i]);  
+	}
+	
+	//sendString(freq);
+	printf("\nfreq: %d\n", freq); 
 	flag=0;
 }
 
-void amplitude(){
-	printf("ampl");
-		for(i=0; i<sizeof(arr); i++){
-			ampl[i] = arr[i];
-	}
+void take_amplitude(){
+	int ampl=0;
+ 	for(i=0; i<3; i++){
+		ampl= ampl*10 + arr[i];
+}
+	printf("\ampl: %d\n", ampl);
+	amplitude = ampl;
 	flag=0;
+}
+
+void sendAmpl(){
+	int second = amplitude;
+	if(amplitude != -1)
+	{
+			while(second >= 0)
+			{
+				printf("\n amp: %d\n",second );
+				WR = 0;
+				P1 = second;
+				second--;
+			}
+			while(second<=amplitude){
+				printf("\n amp: %d\n",second );
+				WR = 0;
+				P1 = second;
+				second++;
+			}
+		
+	}
+	
 }
 
 
@@ -168,12 +208,31 @@ void main (void)  {
 	TR1 = 1;      // Turn ON the timer for Baud rate generation
   ES  = 1;      // Enable Serial INterrupt
   EA  = 1;      // Enable Global Interrupt bit
+	
+	/*--------------------------------------
+	Set Timer1 for 8-bit timer with reload
+	(mode 2). The timer counts to 255,
+	overflows, is reloaded with 156, and
+	generates an interrupt.
+
+	Set the Timer1 Run control bit.
+	--------------------------------------*/
+	WR = 1;
+	P1=0;
+	TMOD = (TMOD & 0x0F) | 0x20;  /* Set Mode (8-bit timer with reload) */
+	TH0 = 256 - 100;              /* Reload TL1 to count 100 clocks */
+	TL0 = TH0;
+	ET0 = 1;                      /* Enable Timer 1 Interrupts */
+	TR0 = 1;                      /* Start Timer 1 Running */
+	EA = 1;                       /* Global Interrupt Enable */
+	
 
 	while(1){
 		if (flag==1){			
-			frequency();
+			take_frequency();
 		}else if(flag==2){
-			amplitude();
-		}
+			take_amplitude();
+		}else if(flag==3)
+			sendAmpl();
 	}
 }

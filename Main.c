@@ -2,20 +2,29 @@
 #include <stdio.h>  
 
 int flag = 0;
+int serialFlag=0;
 int arr[3];
 int index=0;
 int frequency=-1;
 int amplitude=-1;
-int lookup[10] = {31, 15, 7, 3, 1, 0, 16, 24, 28, 30};
+int second;
 int i=0;
-int check=1;
+int innerFlag=0;
 
-sbit clear = P2^4;
-sbit ret = P2^5;				  
-sbit left = P2^6;
-sbit right = P2^7;
-sbit A1 = P3^3;
-sbit A0 = P3^4;
+char buf [10];
+
+void returnHome(void);
+void entryModeSet(bit id, bit s);
+void displayOnOffControl(bit display, bit cursor, bit blinking);
+void cursorOrDisplayShift(bit sc, bit rl);
+void functionSet(void);
+void setDdRamAddress(char address);
+
+void sendChar(char c);
+void sendString(char* str);
+bit getBit(char c, char bitNumber);
+void delay(void);
+
 bit getBit(char c, char bitNumber) {
 	return (c >> bitNumber) & 1;
 }
@@ -69,6 +78,23 @@ void functionSet(void) {
 	delay();
 }
 
+void setDdRamAddress(char address) {
+	RS = 0;
+	DB7 = 1;
+	DB6 = getBit(address, 6);
+	DB5 = getBit(address, 5);
+	DB4 = getBit(address, 4);
+	E = 1;
+	E = 0;
+	DB7 = getBit(address, 3);
+	DB6 = getBit(address, 2);
+	DB5 = getBit(address, 1);
+	DB4 = getBit(address, 0);
+	E = 1;
+	E = 0;
+	delay();
+}
+
 void entryModeSet(bit id, bit s) {
 	RS = 0;
 	DB7 = 0;
@@ -106,14 +132,15 @@ static unsigned long overflow_count = 0;
 void timer0_ISR (void) interrupt 1
 {
 	overflow_count++;   /* Increment the overflow count */
-	flag=3; //for update the amplitude
+	flag=3; //to sen wave
 }
 
 void serial_isr() interrupt 4{	
 	static char ch = '\0';	
 	if(RI == 1)
 	{
-		flag=0;		
+		flag=0;	
+		serialFlag=0;		
 		ch = SBUF;
 		if(ch != '\*' && ch != '\#'){
 			if(ch >= '0' && ch <= '9'){
@@ -124,11 +151,13 @@ void serial_isr() interrupt 4{
 		}else if(ch == '\*') {
 			SBUF=arr;
 			flag=1; //frequency number came
+			serialFlag=1;
 			index = 0; 
 			i=0; 
 		}else if (ch == '\#'){
 			SBUF=arr;
 			flag=2; //amplitude number came
+			serialFlag=1;
 			index = 0; 
 			i=0;
 		}
@@ -146,55 +175,77 @@ void serial_isr() interrupt 4{
 }
 
 
-int i;
-
-
-
 void take_frequency(){
-	int freq =0;
-
-	printf("\n i: %d", sizeof(arr));
 	
+	int freq =0;
 	for(i=0; i<3; i++){
 			freq = freq*10 + arr[i];
-		printf("\ni %d: %d\n", i, arr[i]);  
 	}
+	frequency = freq;
 	
-	//sendString(freq);
-	printf("\nfreq: %d\n", freq); 
+	//LCD PART
+	sprintf(buf, "%d", freq);
+	functionSet();
+	entryModeSet(1, 0); // increment and no shift
+	displayOnOffControl(1, 1, 1); // display on, cursor on and blinking on
+	setDdRamAddress(0x00); // set address to start of second line
+	sendString(buf);
+
 	flag=0;
+	serialFlag=0;
 }
 
 void take_amplitude(){
 	int ampl=0;
- 	for(i=0; i<3; i++){
+	for(i=0; i<3; i++){
 		ampl= ampl*10 + arr[i];
-}
-	printf("\ampl: %d\n", ampl);
+	}
 	amplitude = ampl;
+	second = ampl;
+
+	//LCD PART
+	sprintf(buf, "%d", amplitude);
+	functionSet();
+	entryModeSet(1, 0); // increment and no shift
+	displayOnOffControl(1, 1, 1); // display on, cursor on and blinking on
+	
+	setDdRamAddress(0x40); // set address to start of second line
+	sendString(buf);
+
 	flag=0;
+	serialFlag=0;
 }
 
-void sendAmpl(){
-	int second = amplitude;
-	if(amplitude != -1)
-	{
-			while(second >= 0)
+
+void sendWave(){
+	if(serialFlag == 0){
+		if(amplitude != -1 && frequency != -1)
+		{
+			if(second >= 0 && innerFlag==0)
 			{
-				printf("\n amp: %d\n",second );
 				WR = 0;
 				P1 = second;
 				second--;
 			}
-			while(second<=amplitude){
-				printf("\n amp: %d\n",second );
+			else if (second<=amplitude){
+				if(second==-1){
+					second = 0;
+				}
+				innerFlag=1;
 				WR = 0;
 				P1 = second;
 				second++;
 			}
-		
+			if(second>amplitude){
+				second=amplitude;
+				innerFlag=0;
+			}	
+		}
+		flag=0;
+	}else{
+		amplitude=-1;
+		frequency=-1;
 	}
-	
 }
 
 
@@ -233,6 +284,6 @@ void main (void)  {
 		}else if(flag==2){
 			take_amplitude();
 		}else if(flag==3)
-			sendAmpl();
+			sendWave();
 	}
 }

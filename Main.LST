@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 1   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
@@ -10,13 +10,13 @@ line level    source
    1          #include <REG51.H>
    2          #include <stdio.h>  
    3          
-   4          int flag = 0;
+   4          int taskFlag = 0;
    5          int serialFlag=0;
    6          int arr[3];
    7          int index=0;
    8          int frequency=-1;
    9          int amplitude=-1;
-  10          int second;
+  10          int amplitude_container; //to copy the amplitude value
   11          int i=0;
   12          int innerFlag=0;
   13          
@@ -62,7 +62,7 @@ line level    source
   53          
   54          void sendString(char* str) {
   55   1        int index = 0;
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 2   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 2   
 
   56   1        while (str[index] != 0) {
   57   2          sendChar(str[index]);
@@ -126,7 +126,7 @@ line level    source
  115   1        DB7 = 0;
  116   1        DB6 = 0;
  117   1        DB5 = 0;
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 3   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 3   
 
  118   1        DB4 = 0;
  119   1        E = 1;
@@ -145,14 +145,14 @@ line level    source
  132          void timer0_ISR (void) interrupt 1
  133          {
  134   1        overflow_count++;   /* Increment the overflow count */
- 135   1        flag=3; //to sen wave
+ 135   1        taskFlag=3; //to sen wave
  136   1      }
  137          
  138          void serial_isr() interrupt 4{  
  139   1        static char ch = '\0';  
  140   1        if(RI == 1)
  141   1        {
- 142   2          flag=0; 
+ 142   2          taskFlag=0; 
  143   2          serialFlag=0;   
  144   2          ch = SBUF;
  145   2          if(ch != '\*' && ch != '\#'){
@@ -163,14 +163,14 @@ line level    source
  150   3                  
  151   3          }else if(ch == '\*') {
  152   3            SBUF=arr;
- 153   3            flag=1; //frequency number came
- 154   3            serialFlag=1;
+ 153   3            taskFlag=1; //frequency number came
+ 154   3            serialFlag++;
  155   3            index = 0; 
  156   3            i=0; 
  157   3          }else if (ch == '\#'){
  158   3            SBUF=arr;
- 159   3            flag=2; //amplitude number came
- 160   3            serialFlag=1;
+ 159   3            taskFlag=2; //amplitude number came
+ 160   3            serialFlag++;
  161   3            index = 0; 
  162   3            i=0;
  163   3          }
@@ -188,9 +188,9 @@ line level    source
  175   1      }
  176          
  177          
- 178          void take_frequency(){
+ 178          void get_frequency(){
  179   1        
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 4   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 4   
 
  180   1        int freq =0;
  181   1        for(i=0; i<3; i++){
@@ -206,17 +206,17 @@ line level    source
  191   1        setDdRamAddress(0x00); // set address to start of second line
  192   1        sendString(buf);
  193   1      
- 194   1        flag=0;
- 195   1        serialFlag=0;
+ 194   1        taskFlag=0;
+ 195   1        serialFlag--;
  196   1      }
  197          
- 198          void take_amplitude(){
+ 198          void get_amplitude(){
  199   1        int ampl=0;
  200   1        for(i=0; i<3; i++){
  201   2          ampl= ampl*10 + arr[i];
  202   2        }
  203   1        amplitude = ampl;
- 204   1        second = ampl;
+ 204   1        amplitude_container = ampl;
  205   1      
  206   1        //LCD PART
  207   1        sprintf(buf, "%d", amplitude);
@@ -227,8 +227,8 @@ line level    source
  212   1        setDdRamAddress(0x40); // set address to start of second line
  213   1        sendString(buf);
  214   1      
- 215   1        flag=0;
- 216   1        serialFlag=0;
+ 215   1        taskFlag=0;
+ 216   1        serialFlag--;
  217   1      }
  218          
  219          
@@ -236,29 +236,29 @@ line level    source
  221   1        if(serialFlag == 0){
  222   2          if(amplitude != -1 && frequency != -1)
  223   2          {
- 224   3            if(second >= 0 && innerFlag==0)
+ 224   3            if(amplitude_container >= 0 && innerFlag==0)
  225   3            {
  226   4              WR = 0;
- 227   4              P1 = second;
- 228   4              second--;
+ 227   4              P1 = amplitude_container;
+ 228   4              amplitude_container--;
  229   4            }
- 230   3            else if (second<=amplitude){
- 231   4              if(second==-1){
- 232   5                second = 0;
+ 230   3            else if (amplitude_container<=amplitude){
+ 231   4              if(amplitude_container==-1){
+ 232   5                amplitude_container = 0;
  233   5              }
  234   4              innerFlag=1;
  235   4              WR = 0;
- 236   4              P1 = second;
- 237   4              second++;
+ 236   4              P1 = amplitude_container;
+ 237   4              amplitude_container++;
  238   4            }
- 239   3            if(second>amplitude){
- 240   4              second=amplitude;
+ 239   3            if(amplitude_container>amplitude){
+ 240   4              amplitude_container=amplitude;
  241   4              innerFlag=0;
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 5   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 5   
 
  242   4            } 
  243   3          }
- 244   2          flag=0;
+ 244   2          taskFlag=0;
  245   2        }else{
  246   2          amplitude=-1;
  247   2          frequency=-1;
@@ -274,8 +274,8 @@ line level    source
  257   1        TH1 =  0xf3;    /* TH1 */
  258   1        
  259   1        TR1 = 1;      // Turn ON the timer for Baud rate generation
- 260   1        ES  = 1;      // Enable Serial INterrupt
- 261   1        EA  = 1;      // Enable Global Interrupt bit
+ 260   1          ES  = 1;      // Enable Serial INterrupt
+ 261   1          EA  = 1;      // Enable Global Interrupt bit
  262   1        
  263   1        /*--------------------------------------
  264   1        Set Timer1 for 8-bit timer with reload
@@ -296,28 +296,28 @@ line level    source
  279   1        
  280   1      
  281   1        while(1){
- 282   2          if (flag==1){     
- 283   3            take_frequency();
- 284   3          }else if(flag==2){
- 285   3            take_amplitude();
- 286   3          }else if(flag==3)
+ 282   2          if (taskFlag==1){     
+ 283   3            get_frequency();
+ 284   3          }else if(taskFlag==2){
+ 285   3            get_amplitude();
+ 286   3          }else if(taskFlag==3)
  287   2            sendWave();
  288   2        }
  289   1      }
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 6   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 6   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 
-             ; FUNCTION L?0063 (BEGIN)
+             ; FUNCTION L?0067 (BEGIN)
 0000 D2A2              SETB    E
 0002 C2A2              CLR     E
 0004 1D                DEC     R5
-0005         L?0064:
+0005         L?0068:
 0005 120000      R     LCALL   _getBit
 0008 92A7              MOV     DB7,C
 000A 1D                DEC     R5
-000B         L?0065:
+000B         L?0069:
 000B 120000      R     LCALL   _getBit
 000E 92A6              MOV     DB6,C
 0010 1D                DEC     R5
@@ -368,7 +368,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 35
 0016         ?C0005:
 0016 22                RET     
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 7   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 7   
 
              ; FUNCTION delay (END)
 
@@ -381,7 +381,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 39
                                            ; SOURCE LINE # 40
                                            ; SOURCE LINE # 41
-0004 120000      R     LCALL   L?0064
+0004 120000      R     LCALL   L?0068
 0007 92A4              MOV     DB4,C
                                            ; SOURCE LINE # 42
 0009 D2A3              SETB    RS
@@ -391,7 +391,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 46
                                            ; SOURCE LINE # 47
                                            ; SOURCE LINE # 48
-000B 120000      R     LCALL   L?0063
+000B 120000      R     LCALL   L?0067
 000E 92A4              MOV     DB4,C
                                            ; SOURCE LINE # 49
 0010 D2A2              SETB    E
@@ -401,7 +401,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0014 020000      R     LJMP    delay
              ; FUNCTION _sendChar (END)
 
-             ; FUNCTION L?0066 (BEGIN)
+             ; FUNCTION L?0070 (BEGIN)
 0000 120000      R     LCALL   _setDdRamAddress
 0003 7B00              MOV     R3,#00H
 0005 7A00        R     MOV     R2,#HIGH buf
@@ -432,7 +432,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 57
 002B 120000      R     LCALL   _sendChar
                                            ; SOURCE LINE # 58
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 8   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 8   
 
 002E 0500        R     INC     index+01H
 0030 E500        R     MOV     A,index+01H
@@ -490,17 +490,17 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0006 7D06              MOV     R5,#06H
                                            ; SOURCE LINE # 85
                                            ; SOURCE LINE # 86
-0008 120000      R     LCALL   L?0065
+0008 120000      R     LCALL   L?0069
 000B 92A4              MOV     DB4,C
                                            ; SOURCE LINE # 87
                                            ; SOURCE LINE # 88
                                            ; SOURCE LINE # 89
                                            ; SOURCE LINE # 90
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 9   
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 9   
 
                                            ; SOURCE LINE # 91
                                            ; SOURCE LINE # 92
-000D 120000      R     LCALL   L?0063
+000D 120000      R     LCALL   L?0067
 0010 92A4              MOV     DB4,C
                                            ; SOURCE LINE # 93
 0012 D2A2              SETB    E
@@ -510,7 +510,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0016 020000      R     LJMP    delay
              ; FUNCTION _setDdRamAddress (END)
 
-             ; FUNCTION L?0067 (BEGIN)
+             ; FUNCTION L?0071 (BEGIN)
 0000 120000      R     LCALL   functionSet
 0003 D200        R     SETB    ?entryModeSet?BIT
 0005 C200        R     CLR     ?entryModeSet?BIT+01H
@@ -546,7 +546,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0023 020000      R     LJMP    delay
              ; FUNCTION entryModeSet (END)
 
-             ; FUNCTION L?0068 (BEGIN)
+             ; FUNCTION L?0072 (BEGIN)
 0000 D200        R     SETB    ?displayOnOffControl?BIT
 0002 D200        R     SETB    ?displayOnOffControl?BIT+01H
 0004 D200        R     SETB    ?displayOnOffControl?BIT+02H
@@ -560,7 +560,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 000A C2A5              CLR     DB5
                                            ; SOURCE LINE # 118
 000C C2A4              CLR     DB4
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 10  
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 10  
 
                                            ; SOURCE LINE # 119
 000E D2A2              SETB    E
@@ -603,8 +603,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0015 3500        R     ADDC    A,overflow_count
 0017 F500        R     MOV     overflow_count,A
                                            ; SOURCE LINE # 135
-0019 750000      R     MOV     flag,#00H
-001C 750003      R     MOV     flag+01H,#03H
+0019 750000      R     MOV     taskFlag,#00H
+001C 750003      R     MOV     taskFlag+01H,#03H
                                            ; SOURCE LINE # 136
 001F D0D0              POP     PSW
 0021 D0E0              POP     ACC
@@ -624,10 +624,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0010 020000      R     LJMP    ?C0015
                                            ; SOURCE LINE # 141
                                            ; SOURCE LINE # 142
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 11  
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 11  
 
-0013 750000      R     MOV     flag,#00H
-0016 750000      R     MOV     flag+01H,#00H
+0013 750000      R     MOV     taskFlag,#00H
+0016 750000      R     MOV     taskFlag+01H,#00H
                                            ; SOURCE LINE # 143
 0019 750000      R     MOV     serialFlag,#00H
 001C 750000      R     MOV     serialFlag+01H,#00H
@@ -652,14 +652,14 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0039 EE                MOV     A,R6
 003A 6480              XRL     A,#080H
 003C 9480              SUBB    A,#080H
-003E 4059              JC      ?C0018
+003E 4063              JC      ?C0018
 0040 D3                SETB    C
 0041 EF                MOV     A,R7
 0042 9439              SUBB    A,#039H
 0044 EE                MOV     A,R6
 0045 6480              XRL     A,#080H
 0047 9480              SUBB    A,#080H
-0049 504E              JNC     ?C0018
+0049 5058              JNC     ?C0018
                                            ; SOURCE LINE # 147
 004B EF                MOV     A,R7
 004C 24D0              ADD     A,#0D0H
@@ -677,83 +677,91 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 148
 005F 0500        R     INC     index+01H
 0061 E500        R     MOV     A,index+01H
-0063 7034              JNZ     ?C0018
+0063 703E              JNZ     ?C0018
 0065 0500        R     INC     index
 0067         ?C0054:
                                            ; SOURCE LINE # 149
                                            ; SOURCE LINE # 151
-0067 8030              SJMP    ?C0018
+0067 803A              SJMP    ?C0018
 0069         ?C0016:
 0069 E500        R     MOV     A,ch
-006B B42A0B            CJNE    A,#02AH,?C0019
+006B B42A13            CJNE    A,#02AH,?C0019
                                            ; SOURCE LINE # 152
 006E 759900      R     MOV     SBUF,#LOW arr
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 12  
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 12  
 
                                            ; SOURCE LINE # 153
-0071 750000      R     MOV     flag,#00H
-0074 750001      R     MOV     flag+01H,#01H
+0071 750000      R     MOV     taskFlag,#00H
+0074 750001      R     MOV     taskFlag+01H,#01H
                                            ; SOURCE LINE # 154
+0077 0500        R     INC     serialFlag+01H
+0079 E500        R     MOV     A,serialFlag+01H
+007B 701A              JNZ     ?C0066
+007D 0500        R     INC     serialFlag
+007F         ?C0055:
                                            ; SOURCE LINE # 155
                                            ; SOURCE LINE # 156
                                            ; SOURCE LINE # 157
-0077 800E              SJMP    ?C0062
-0079         ?C0019:
-0079 E500        R     MOV     A,ch
-007B B4231B            CJNE    A,#023H,?C0018
+007F 8016              SJMP    ?C0066
+0081         ?C0019:
+0081 E500        R     MOV     A,ch
+0083 B4231D            CJNE    A,#023H,?C0018
                                            ; SOURCE LINE # 158
-007E 759900      R     MOV     SBUF,#LOW arr
+0086 759900      R     MOV     SBUF,#LOW arr
                                            ; SOURCE LINE # 159
-0081 750000      R     MOV     flag,#00H
-0084 750002      R     MOV     flag+01H,#02H
+0089 750000      R     MOV     taskFlag,#00H
+008C 750002      R     MOV     taskFlag+01H,#02H
                                            ; SOURCE LINE # 160
-0087         ?C0062:
-0087 750000      R     MOV     serialFlag,#00H
-008A 750001      R     MOV     serialFlag+01H,#01H
+008F 0500        R     INC     serialFlag+01H
+0091 E500        R     MOV     A,serialFlag+01H
+0093 7002              JNZ     ?C0056
+0095 0500        R     INC     serialFlag
+0097         ?C0056:
                                            ; SOURCE LINE # 161
-008D 750000      R     MOV     index,#00H
-0090 750000      R     MOV     index+01H,#00H
+0097         ?C0066:
+0097 750000      R     MOV     index,#00H
+009A 750000      R     MOV     index+01H,#00H
                                            ; SOURCE LINE # 162
-0093 750000      R     MOV     i,#00H
-0096 750000      R     MOV     i+01H,#00H
+009D 750000      R     MOV     i,#00H
+00A0 750000      R     MOV     i+01H,#00H
                                            ; SOURCE LINE # 163
-0099         ?C0018:
+00A3         ?C0018:
                                            ; SOURCE LINE # 165
-0099 C298              CLR     RI
+00A3 C298              CLR     RI
                                            ; SOURCE LINE # 166
-009B D299              SETB    TI
+00A5 D299              SETB    TI
                                            ; SOURCE LINE # 168
-009D 800E              SJMP    ?C0025
-009F         ?C0015:
-009F 30990B            JNB     TI,?C0025
+00A7 800E              SJMP    ?C0025
+00A9         ?C0015:
+00A9 30990B            JNB     TI,?C0025
                                            ; SOURCE LINE # 169
-00A2 C299              CLR     TI
+00AC C299              CLR     TI
                                            ; SOURCE LINE # 170
-00A4 E500        R     MOV     A,ch
-00A6 6005              JZ      ?C0025
+00AE E500        R     MOV     A,ch
+00B0 6005              JZ      ?C0025
                                            ; SOURCE LINE # 171
-00A8 F599              MOV     SBUF,A
+00B2 F599              MOV     SBUF,A
                                            ; SOURCE LINE # 172
-00AA 750000      R     MOV     ch,#00H
+00B4 750000      R     MOV     ch,#00H
                                            ; SOURCE LINE # 173
                                            ; SOURCE LINE # 174
                                            ; SOURCE LINE # 175
-00AD         ?C0025:
-00AD D007              POP     AR7
-00AF D006              POP     AR6
-00B1 D000              POP     AR0
-00B3 D0D0              POP     PSW
-00B5 D0E0              POP     ACC
-00B7 32                RETI    
+00B7         ?C0025:
+00B7 D007              POP     AR7
+00B9 D006              POP     AR6
+00BB D000              POP     AR0
+00BD D0D0              POP     PSW
+00BF D0E0              POP     ACC
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 13  
+
+00C1 32                RETI    
              ; FUNCTION serial_isr (END)
 
-             ; FUNCTION take_frequency (BEGIN)
+             ; FUNCTION get_frequency (BEGIN)
                                            ; SOURCE LINE # 178
                                            ; SOURCE LINE # 180
 ;---- Variable 'freq' assigned to Register 'R6/R7' ----
 0000 E4                CLR     A
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 13  
-
 0001 FF                MOV     R7,A
 0002 FE                MOV     R6,A
                                            ; SOURCE LINE # 181
@@ -780,9 +788,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 183
 001E 0500        R     INC     i+01H
 0020 E500        R     MOV     A,i+01H
-0022 7002              JNZ     ?C0055
+0022 7002              JNZ     ?C0057
 0024 0500        R     INC     i
-0026         ?C0055:
+0026         ?C0057:
 0026 6403              XRL     A,#03H
 0028 4500        R     ORL     A,i
 002A 70DB              JNZ     ?C0026
@@ -802,28 +810,31 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0043 120000      E     LCALL   _sprintf
                                            ; SOURCE LINE # 188
                                            ; SOURCE LINE # 189
-0046 120000      R     LCALL   L?0067
+0046 120000      R     LCALL   L?0071
                                            ; SOURCE LINE # 190
-0049 120000      R     LCALL   L?0068
+0049 120000      R     LCALL   L?0072
                                            ; SOURCE LINE # 191
 004C E4                CLR     A
 004D FF                MOV     R7,A
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 14  
+
                                            ; SOURCE LINE # 192
-004E 120000      R     LCALL   L?0066
+004E 120000      R     LCALL   L?0070
                                            ; SOURCE LINE # 194
 0051 E4                CLR     A
-0052 F500        R     MOV     flag,A
-0054 F500        R     MOV     flag+01H,A
+0052 F500        R     MOV     taskFlag,A
+0054 F500        R     MOV     taskFlag+01H,A
                                            ; SOURCE LINE # 195
-0056 F500        R     MOV     serialFlag,A
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 14  
-
-0058 F500        R     MOV     serialFlag+01H,A
+0056 E500        R     MOV     A,serialFlag+01H
+0058 1500        R     DEC     serialFlag+01H
+005A 7002              JNZ     ?C0058
+005C 1500        R     DEC     serialFlag
+005E         ?C0058:
                                            ; SOURCE LINE # 196
-005A 22                RET     
-             ; FUNCTION take_frequency (END)
+005E 22                RET     
+             ; FUNCTION get_frequency (END)
 
-             ; FUNCTION take_amplitude (BEGIN)
+             ; FUNCTION get_amplitude (BEGIN)
                                            ; SOURCE LINE # 198
                                            ; SOURCE LINE # 199
 ;---- Variable 'ampl' assigned to Register 'R6/R7' ----
@@ -854,9 +865,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 202
 001E 0500        R     INC     i+01H
 0020 E500        R     MOV     A,i+01H
-0022 7002              JNZ     ?C0056
+0022 7002              JNZ     ?C0059
 0024 0500        R     INC     i
-0026         ?C0056:
+0026         ?C0059:
 0026 6403              XRL     A,#03H
 0028 4500        R     ORL     A,i
 002A 70DB              JNZ     ?C0030
@@ -865,10 +876,12 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 002C 8E00        R     MOV     amplitude,R6
 002E 8F00        R     MOV     amplitude+01H,R7
                                            ; SOURCE LINE # 204
-0030 8E00        R     MOV     second,R6
-0032 8F00        R     MOV     second+01H,R7
+0030 8E00        R     MOV     amplitude_container,R6
+0032 8F00        R     MOV     amplitude_container+01H,R7
                                            ; SOURCE LINE # 207
 0034 7500FF      E     MOV     ?_sprintf?BYTE+03H,#0FFH
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 15  
+
 0037 750000      R     MOV     ?_sprintf?BYTE+04H,#HIGH ?SC_0
 003A 750000      R     MOV     ?_sprintf?BYTE+05H,#LOW ?SC_0
 003D 850000      E     MOV     ?_sprintf?BYTE+06H,amplitude
@@ -879,25 +892,26 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0049 120000      E     LCALL   _sprintf
                                            ; SOURCE LINE # 208
                                            ; SOURCE LINE # 209
-004C 120000      R     LCALL   L?0067
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 15  
-
+004C 120000      R     LCALL   L?0071
                                            ; SOURCE LINE # 210
-004F 120000      R     LCALL   L?0068
+004F 120000      R     LCALL   L?0072
                                            ; SOURCE LINE # 212
 0052 7F40              MOV     R7,#040H
                                            ; SOURCE LINE # 213
-0054 120000      R     LCALL   L?0066
+0054 120000      R     LCALL   L?0070
                                            ; SOURCE LINE # 215
 0057 E4                CLR     A
-0058 F500        R     MOV     flag,A
-005A F500        R     MOV     flag+01H,A
+0058 F500        R     MOV     taskFlag,A
+005A F500        R     MOV     taskFlag+01H,A
                                            ; SOURCE LINE # 216
-005C F500        R     MOV     serialFlag,A
-005E F500        R     MOV     serialFlag+01H,A
+005C E500        R     MOV     A,serialFlag+01H
+005E 1500        R     DEC     serialFlag+01H
+0060 7002              JNZ     ?C0060
+0062 1500        R     DEC     serialFlag
+0064         ?C0060:
                                            ; SOURCE LINE # 217
-0060 22                RET     
-             ; FUNCTION take_amplitude (END)
+0064 22                RET     
+             ; FUNCTION get_amplitude (END)
 
              ; FUNCTION sendWave (BEGIN)
                                            ; SOURCE LINE # 220
@@ -909,64 +923,64 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 222
 0009 E500        R     MOV     A,amplitude+01H
 000B F4                CPL     A
-000C 7003              JNZ     ?C0057
+000C 7003              JNZ     ?C0061
 000E E500        R     MOV     A,amplitude
 0010 F4                CPL     A
-0011         ?C0057:
+0011         ?C0061:
 0011 6077              JZ      ?C0035
 0013 E500        R     MOV     A,frequency+01H
 0015 F4                CPL     A
-0016 7003              JNZ     ?C0058
+0016 7003              JNZ     ?C0062
 0018 E500        R     MOV     A,frequency
 001A F4                CPL     A
-001B         ?C0058:
+001B         ?C0062:
 001B 606D              JZ      ?C0035
                                            ; SOURCE LINE # 223
                                            ; SOURCE LINE # 224
 001D C3                CLR     C
-001E E500        R     MOV     A,second
+001E E500        R     MOV     A,amplitude_container
 0020 6480              XRL     A,#080H
 0022 9480              SUBB    A,#080H
 0024 4015              JC      ?C0036
 0026 E500        R     MOV     A,innerFlag+01H
 0028 4500        R     ORL     A,innerFlag
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 16  
+
 002A 700F              JNZ     ?C0036
                                            ; SOURCE LINE # 225
                                            ; SOURCE LINE # 226
 002C C287              CLR     WR
                                            ; SOURCE LINE # 227
-002E 850090      R     MOV     P1,second+01H
+002E 850090      R     MOV     P1,amplitude_container+01H
                                            ; SOURCE LINE # 228
-0031 E500        R     MOV     A,second+01H
-0033 1500        R     DEC     second+01H
+0031 E500        R     MOV     A,amplitude_container+01H
+0033 1500        R     DEC     amplitude_container+01H
 0035 7037              JNZ     ?C0037
-0037 1500        R     DEC     second
-0039         ?C0059:
+0037 1500        R     DEC     amplitude_container
+0039         ?C0063:
                                            ; SOURCE LINE # 229
 0039 8033              SJMP    ?C0037
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 16  
-
 003B         ?C0036:
                                            ; SOURCE LINE # 230
 003B D3                SETB    C
-003C E500        R     MOV     A,second+01H
+003C E500        R     MOV     A,amplitude_container+01H
 003E 9500        R     SUBB    A,amplitude+01H
 0040 E500        R     MOV     A,amplitude
 0042 6480              XRL     A,#080H
 0044 F8                MOV     R0,A
-0045 E500        R     MOV     A,second
+0045 E500        R     MOV     A,amplitude_container
 0047 6480              XRL     A,#080H
 0049 98                SUBB    A,R0
 004A 5022              JNC     ?C0037
                                            ; SOURCE LINE # 231
-004C E500        R     MOV     A,second+01H
+004C E500        R     MOV     A,amplitude_container+01H
 004E B4FF0A            CJNE    A,#0FFH,?C0039
-0051 E500        R     MOV     A,second
+0051 E500        R     MOV     A,amplitude_container
 0053 B4FF05            CJNE    A,#0FFH,?C0039
                                            ; SOURCE LINE # 232
 0056 E4                CLR     A
-0057 F500        R     MOV     second,A
-0059 F500        R     MOV     second+01H,A
+0057 F500        R     MOV     amplitude_container,A
+0059 F500        R     MOV     amplitude_container+01H,A
                                            ; SOURCE LINE # 233
 005B         ?C0039:
                                            ; SOURCE LINE # 234
@@ -975,29 +989,31 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 235
 0061 C287              CLR     WR
                                            ; SOURCE LINE # 236
-0063 850090      R     MOV     P1,second+01H
+0063 850090      R     MOV     P1,amplitude_container+01H
                                            ; SOURCE LINE # 237
-0066 0500        R     INC     second+01H
-0068 E500        R     MOV     A,second+01H
-006A 7002              JNZ     ?C0061
-006C 0500        R     INC     second
-006E         ?C0061:
+0066 0500        R     INC     amplitude_container+01H
+0068 E500        R     MOV     A,amplitude_container+01H
+006A 7002              JNZ     ?C0065
+006C 0500        R     INC     amplitude_container
+006E         ?C0065:
                                            ; SOURCE LINE # 238
 006E         ?C0037:
                                            ; SOURCE LINE # 239
 006E D3                SETB    C
-006F E500        R     MOV     A,second+01H
+006F E500        R     MOV     A,amplitude_container+01H
 0071 9500        R     SUBB    A,amplitude+01H
 0073 E500        R     MOV     A,amplitude
 0075 6480              XRL     A,#080H
 0077 F8                MOV     R0,A
-0078 E500        R     MOV     A,second
+0078 E500        R     MOV     A,amplitude_container
 007A 6480              XRL     A,#080H
 007C 98                SUBB    A,R0
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 17  
+
 007D 400B              JC      ?C0035
                                            ; SOURCE LINE # 240
-007F 850000      R     MOV     second,amplitude
-0082 850000      R     MOV     second+01H,amplitude+01H
+007F 850000      R     MOV     amplitude_container,amplitude
+0082 850000      R     MOV     amplitude_container+01H,amplitude+01H
                                            ; SOURCE LINE # 241
 0085 E4                CLR     A
 0086 F500        R     MOV     innerFlag,A
@@ -1007,10 +1023,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 008A         ?C0035:
                                            ; SOURCE LINE # 244
 008A E4                CLR     A
-008B F500        R     MOV     flag,A
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 17  
-
-008D F500        R     MOV     flag+01H,A
+008B F500        R     MOV     taskFlag,A
+008D F500        R     MOV     taskFlag+01H,A
                                            ; SOURCE LINE # 245
 008F 22                RET     
 0090         ?C0034:
@@ -1058,6 +1072,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 275
 0022 858C8A            MOV     TL0,TH0
                                            ; SOURCE LINE # 276
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 18  
+
 0025 D2A9              SETB    ET0
                                            ; SOURCE LINE # 277
 0027 D28C              SETB    TR0
@@ -1066,29 +1082,27 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 002B         ?C0043:
                                            ; SOURCE LINE # 281
                                            ; SOURCE LINE # 282
-002B E500        R     MOV     A,flag+01H
+002B E500        R     MOV     A,taskFlag+01H
 002D 6401              XRL     A,#01H
-002F 4500        R     ORL     A,flag
+002F 4500        R     ORL     A,taskFlag
 0031 7005              JNZ     ?C0045
                                            ; SOURCE LINE # 283
-0033 120000      R     LCALL   take_frequency
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 18  
-
+0033 120000      R     LCALL   get_frequency
                                            ; SOURCE LINE # 284
 0036 80F3              SJMP    ?C0043
 0038         ?C0045:
-0038 E500        R     MOV     A,flag+01H
+0038 E500        R     MOV     A,taskFlag+01H
 003A 6402              XRL     A,#02H
-003C 4500        R     ORL     A,flag
+003C 4500        R     ORL     A,taskFlag
 003E 7005              JNZ     ?C0047
                                            ; SOURCE LINE # 285
-0040 120000      R     LCALL   take_amplitude
+0040 120000      R     LCALL   get_amplitude
                                            ; SOURCE LINE # 286
 0043 80E6              SJMP    ?C0043
 0045         ?C0047:
-0045 E500        R     MOV     A,flag+01H
+0045 E500        R     MOV     A,taskFlag+01H
 0047 6403              XRL     A,#03H
-0049 4500        R     ORL     A,flag
+0049 4500        R     ORL     A,taskFlag
 004B 70DE              JNZ     ?C0043
                                            ; SOURCE LINE # 287
 004D 120000      R     LCALL   sendWave
@@ -1096,27 +1110,25 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 0050 80D9              SJMP    ?C0043
              ; FUNCTION main (END)
 
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 19  
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 19  
 
 NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
 ====                                    =====   ======  ====    ======  ====
 
 
-second . . . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0001H  2
-serialFlag . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0003H  2
+serialFlag . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0001H  2
 P1 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0090H  1
 EA . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AFH  1
-overflow_count . . . . . . . . . . . .  STATIC   DATA   U_LONG   0005H  4
+overflow_count . . . . . . . . . . . .  STATIC   DATA   U_LONG   0003H  4
 _sprintf . . . . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
 delay. . . . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
   c. . . . . . . . . . . . . . . . . .  * REG *  DATA   CHAR     0007H  1
 size_t . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
 ES . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ACH  1
 functionSet. . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
-index. . . . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0009H  2
+index. . . . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0007H  2
 RI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0098H  1
-innerFlag. . . . . . . . . . . . . . .  PUBLIC   DATA   INT      000BH  2
-flag . . . . . . . . . . . . . . . . .  PUBLIC   DATA   INT      000DH  2
+innerFlag. . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0009H  2
 TI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0099H  1
 timer0_ISR . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
 RS . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A3H  1
@@ -1128,6 +1140,7 @@ WR . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0087H  1
 _sendChar. . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
   c. . . . . . . . . . . . . . . . . .  * REG *  DATA   CHAR     0004H  1
 SBUF . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0099H  1
+taskFlag . . . . . . . . . . . . . . .  PUBLIC   DATA   INT      000BH  2
 serial_isr . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
   ch . . . . . . . . . . . . . . . . .  STATIC   DATA   CHAR     0000H  1
 SCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0098H  1
@@ -1141,41 +1154,42 @@ displayOnOffControl. . . . . . . . . .  PUBLIC   CODE   PROC     0006H  -----
   cursor . . . . . . . . . . . . . . .  AUTO     DATA   BIT      0001H  1
   blinking . . . . . . . . . . . . . .  AUTO     DATA   BIT      0002H  1
 DB7. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A7H  1
-buf. . . . . . . . . . . . . . . . . .  PUBLIC   DATA   ARRAY    000FH  10
+buf. . . . . . . . . . . . . . . . . .  PUBLIC   DATA   ARRAY    000DH  10
 sendWave . . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
 E. . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A2H  1
-arr. . . . . . . . . . . . . . . . . .  PUBLIC   DATA   ARRAY    0019H  6
+arr. . . . . . . . . . . . . . . . . .  PUBLIC   DATA   ARRAY    0017H  6
 ET0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A9H  1
-amplitude. . . . . . . . . . . . . . .  PUBLIC   DATA   INT      001FH  2
+amplitude. . . . . . . . . . . . . . .  PUBLIC   DATA   INT      001DH  2
 TH0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008CH  1
 TH1. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008DH  1
 TL0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008AH  1
-take_amplitude . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
-  ampl . . . . . . . . . . . . . . . .  * REG *  DATA   INT      0006H  2
 TR0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008CH  1
 TR1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008EH  1
-frequency. . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0021H  2
-take_frequency . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
-  freq . . . . . . . . . . . . . . . .  * REG *  DATA   INT      0006H  2
+frequency. . . . . . . . . . . . . . .  PUBLIC   DATA   INT      001FH  2
 _getBit. . . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0017H  -----
   c. . . . . . . . . . . . . . . . . .  * REG *  DATA   CHAR     0007H  1
-C51 COMPILER V9.60.0.0   MAIN                                                              08/26/2020 02:31:08 PAGE 20  
+  bitNumber. . . . . . . . . . . . . .  * REG *  DATA   CHAR     0005H  1
+_setDdRamAddress . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  address. . . . . . . . . . . . . . .  * REG *  DATA   CHAR     0004H  1
+i. . . . . . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0021H  2
+entryModeSet . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0007H  -----
+C51 COMPILER V9.60.0.0   MAIN                                                              08/27/2020 02:28:36 PAGE 20  
 
 NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
 ====                                    =====   ======  ====    ======  ====
 
 
-  bitNumber. . . . . . . . . . . . . .  * REG *  DATA   CHAR     0005H  1
-_setDdRamAddress . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
-  address. . . . . . . . . . . . . . .  * REG *  DATA   CHAR     0004H  1
-i. . . . . . . . . . . . . . . . . . .  PUBLIC   DATA   INT      0023H  2
-entryModeSet . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0007H  -----
   id . . . . . . . . . . . . . . . . .  AUTO     DATA   BIT      0000H  1
   s. . . . . . . . . . . . . . . . . .  AUTO     DATA   BIT      0001H  1
+get_amplitude. . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  ampl . . . . . . . . . . . . . . . .  * REG *  DATA   INT      0006H  2
+amplitude_container. . . . . . . . . .  PUBLIC   DATA   INT      0023H  2
+get_frequency. . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  freq . . . . . . . . . . . . . . . .  * REG *  DATA   INT      0006H  2
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    918    ----
+   CODE SIZE        =    936    ----
    CONSTANT SIZE    =      3    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----

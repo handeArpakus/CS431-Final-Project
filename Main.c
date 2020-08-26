@@ -1,13 +1,13 @@
 #include <REG51.H>
 #include <stdio.h>  
 
-int flag = 0;
+int taskFlag = 0;
 int serialFlag=0;
 int arr[3];
 int index=0;
 int frequency=-1;
 int amplitude=-1;
-int second;
+int amplitude_container; //to copy the amplitude value
 int i=0;
 int innerFlag=0;
 
@@ -132,14 +132,14 @@ static unsigned long overflow_count = 0;
 void timer0_ISR (void) interrupt 1
 {
 	overflow_count++;   /* Increment the overflow count */
-	flag=3; //to sen wave
+	taskFlag=3; //to sen wave
 }
 
 void serial_isr() interrupt 4{	
 	static char ch = '\0';	
 	if(RI == 1)
 	{
-		flag=0;	
+		taskFlag=0;	
 		serialFlag=0;		
 		ch = SBUF;
 		if(ch != '\*' && ch != '\#'){
@@ -150,14 +150,14 @@ void serial_isr() interrupt 4{
 						
 		}else if(ch == '\*') {
 			SBUF=arr;
-			flag=1; //frequency number came
-			serialFlag=1;
+			taskFlag=1; //frequency number came
+			serialFlag++;
 			index = 0; 
 			i=0; 
 		}else if (ch == '\#'){
 			SBUF=arr;
-			flag=2; //amplitude number came
-			serialFlag=1;
+			taskFlag=2; //amplitude number came
+			serialFlag++;
 			index = 0; 
 			i=0;
 		}
@@ -175,7 +175,7 @@ void serial_isr() interrupt 4{
 }
 
 
-void take_frequency(){
+void get_frequency(){
 	
 	int freq =0;
 	for(i=0; i<3; i++){
@@ -191,17 +191,17 @@ void take_frequency(){
 	setDdRamAddress(0x00); // set address to start of second line
 	sendString(buf);
 
-	flag=0;
-	serialFlag=0;
+	taskFlag=0;
+	serialFlag--;
 }
 
-void take_amplitude(){
+void get_amplitude(){
 	int ampl=0;
 	for(i=0; i<3; i++){
 		ampl= ampl*10 + arr[i];
 	}
 	amplitude = ampl;
-	second = ampl;
+	amplitude_container = ampl;
 
 	//LCD PART
 	sprintf(buf, "%d", amplitude);
@@ -212,8 +212,8 @@ void take_amplitude(){
 	setDdRamAddress(0x40); // set address to start of second line
 	sendString(buf);
 
-	flag=0;
-	serialFlag=0;
+	taskFlag=0;
+	serialFlag--;
 }
 
 
@@ -221,27 +221,27 @@ void sendWave(){
 	if(serialFlag == 0){
 		if(amplitude != -1 && frequency != -1)
 		{
-			if(second >= 0 && innerFlag==0)
+			if(amplitude_container >= 0 && innerFlag==0)
 			{
 				WR = 0;
-				P1 = second;
-				second--;
+				P1 = amplitude_container;
+				amplitude_container--;
 			}
-			else if (second<=amplitude){
-				if(second==-1){
-					second = 0;
+			else if (amplitude_container<=amplitude){
+				if(amplitude_container==-1){
+					amplitude_container = 0;
 				}
 				innerFlag=1;
 				WR = 0;
-				P1 = second;
-				second++;
+				P1 = amplitude_container;
+				amplitude_container++;
 			}
-			if(second>amplitude){
-				second=amplitude;
+			if(amplitude_container>amplitude){
+				amplitude_container=amplitude;
 				innerFlag=0;
 			}	
 		}
-		flag=0;
+		taskFlag=0;
 	}else{
 		amplitude=-1;
 		frequency=-1;
@@ -257,8 +257,8 @@ void main (void)  {
 	TH1 =  0xf3;    /* TH1 */
 	
 	TR1 = 1;      // Turn ON the timer for Baud rate generation
-  ES  = 1;      // Enable Serial INterrupt
-  EA  = 1;      // Enable Global Interrupt bit
+  	ES  = 1;      // Enable Serial INterrupt
+  	EA  = 1;      // Enable Global Interrupt bit
 	
 	/*--------------------------------------
 	Set Timer1 for 8-bit timer with reload
@@ -279,11 +279,11 @@ void main (void)  {
 	
 
 	while(1){
-		if (flag==1){			
-			take_frequency();
-		}else if(flag==2){
-			take_amplitude();
-		}else if(flag==3)
+		if (taskFlag==1){			
+			get_frequency();
+		}else if(taskFlag==2){
+			get_amplitude();
+		}else if(taskFlag==3)
 			sendWave();
 	}
 }
